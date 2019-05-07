@@ -13,7 +13,6 @@ class SubscriptionCore: SVTBase
 	hidden [bool] $HasGraphAPIAccess;
 	hidden [PSObject] $MisConfiguredASCPolicies;
 	hidden [PSObject] $MisConfiguredOptionalASCPolicies;
-	hidden [PSObject] $AllMisConfiguredASCPolicies;
 	hidden [SecurityCenter] $SecurityCenterInstance;
 	hidden [string[]] $SubscriptionMandatoryTags = @();
 	hidden [System.Collections.Generic.List[TelemetryRBAC]] $PIMAssignments;
@@ -461,19 +460,15 @@ class SubscriptionCore: SVTBase
 		if ($this.SecurityCenterInstance)
 		{
 			#$controlResult.AddMessage([MessageData]::new("Security center policies must be configured with settings mentioned below:", $this.SecurityCenterInstance.Policy.properties));			
-			$this.AllMisConfiguredASCPolicies += $this.MisConfiguredOptionalASCPolicies;
-			$this.AllMisConfiguredASCPolicies += $this.MisConfiguredASCPolicies;
 
-			if(($this.AllMisConfiguredASCPolicies | Measure-Object).Count -ne 0)
-			{
-				$controlResult.SetStateData("Security Center misconfigured mandatory and optional policies", $this.AllMisConfiguredASCPolicies);
-			}
+			$this.SubscriptionContext.SubscriptionMetadata.Add("MissingOptionalASCPolicies",$this.MisConfiguredOptionalASCPolicies);
+			$this.SubscriptionContext.SubscriptionMetadata.Add("MissingMandatoryASCPolicies",$this.MisConfiguredASCPolicies);
 
 			if(($this.MisConfiguredASCPolicies | Measure-Object).Count -ne 0)
 			{
 				$controlResult.EnableFixControl = $true;
 
-				#$controlResult.SetStateData("Security Center misconfigured policies", $this.MisConfiguredASCPolicies);
+				$controlResult.SetStateData("Security Center misconfigured policies", $this.MisConfiguredASCPolicies);
 				$controlResult.AddMessage([VerificationResult]::Failed, [MessageData]::new("Following security center policies are not correctly configured. Please update the policies in order to comply.", $this.MisConfiguredASCPolicies));
 			}
 			# elseif(-not $this.SecurityCenterInstance.IsLatestVersion -and $this.SecurityCenterInstance.IsValidVersion)
